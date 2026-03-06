@@ -44,6 +44,28 @@ services:
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
       CONFLUENT_METRICS_ENABLE: 'true'
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    networks:
+      - springboot-network
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.1
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - springboot-network
   kafkaproject:
     build: .
     image: kafkaproject-img
@@ -52,7 +74,22 @@ services:
     networks:
         - springboot-network
     ports:
-      - 8080:8080  
+      - 8080:8080
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    volumes:
+      - ./logs:/logs
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.1
+    container_name: filebeat
+    user: root
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs:/logs:ro
+    networks:
+      - springboot-network
 networks:
   springboot-network:
     driver: bridge

@@ -5,23 +5,26 @@ import java.io.IOException;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
-import org.springframework.boot.logging.java.SimpleFormatter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
+@Component
 public class CustomLogger {
 
+	@Value("${app.log.file:customLogFile.log}")
+	private String logFile;
+	
 	@CircuitBreaker(name = "logInFile", fallbackMethod = "logInFileFallback")
 	public void logInFile(String msg) {
 		Logger logger = Logger.getLogger("MyLog");
 		FileHandler fh;
 
 		try {
-			String filePath = new File("").getAbsolutePath() + "\\";
-
-			fh = new FileHandler(filePath + "customLogFile.log", true);
+			fh = new FileHandler(logFile, true);
 			logger.addHandler(fh);
-			SimpleFormatter formatter = new SimpleFormatter();
+			PlainFormatter formatter = new PlainFormatter();
 			fh.setFormatter(formatter);
 
 			logger.info(msg);
@@ -32,6 +35,9 @@ public class CustomLogger {
 			s.printStackTrace();
 		}
 
+	}
+
+	public void logInFileFallback(String msg, Throwable e) {
 	}
 
 }
