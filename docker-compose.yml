@@ -1,5 +1,4 @@
 ---
-version: '2'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
@@ -79,15 +78,15 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     volumes:
       - ./logs:/logs
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:8.11.1
-    container_name: filebeat
-    user: root
+  kibana-init:
+    image: alpine:3.19
+    container_name: kibana-init
     depends_on:
-      - elasticsearch
+      - kibana
+    entrypoint: ["/bin/sh","-c"]
+    command: ["apk add --no-cache curl jq >/dev/null 2>&1 && sh /scripts/kibana-init.sh"]
     volumes:
-      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-      - ./logs:/logs:ro
+      - ./scripts:/scripts
     networks:
       - springboot-network
 networks:
